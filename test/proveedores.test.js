@@ -1,20 +1,24 @@
 const request = require('supertest');
-const app = require('../src/proveedores.js'); // Ruta al archivo principal de la app
+const app = require('../src/proveedores.js'); // Asegúrate de exportar la app desde proveedores.js
 const db = require('../config/database');
 const assert = require('assert');
 
-// Configuración inicial para las pruebas
-require('./testSetup'); // Configuración global para limpiar datos entre pruebas
+require('./testSetup');
 
 describe('Proveedores API Endpoints', () => {
   before(async () => {
-    // Limpiar la tabla y agregar datos iniciales
     await db.query('TRUNCATE TABLE Proveedores RESTART IDENTITY CASCADE');
-    await db.query("INSERT INTO Proveedores (nombre, direccion, rfc, telefono) VALUES ('Proveedor A', 'Calle 1, Ciudad', 'RFC12345A', '5555555555')");
+
+    // Insertar datos iniciales válidos
+    await db.query(`
+      INSERT INTO Proveedores (nombre, direccion, rfc, telefono)
+      VALUES 
+        ('Proveedor XYZ', 'Calle Principal 123, Ciudad', 'RFC123456789A', '5551234561'),
+        ('Proveedor ABC', 'Calle Secundaria 456, Ciudad', 'RFC987654321B', '5551234562');
+    `);
   });
 
   after(async () => {
-    // Limpiar la tabla después de las pruebas
     await db.query('TRUNCATE TABLE Proveedores RESTART IDENTITY CASCADE');
   });
 
@@ -22,57 +26,56 @@ describe('Proveedores API Endpoints', () => {
     const res = await request(app).get('/api/proveedores');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(Array.isArray(res.body), true);
-    assert.strictEqual(res.body.length, 1);
+    assert.strictEqual(res.body.length, 2);
   });
 
   it('GET /api/proveedores/:id debe retornar un proveedor por ID', async () => {
     const res = await request(app).get('/api/proveedores/1');
     assert.strictEqual(res.status, 200);
-    assert.ok(res.body.hasOwnProperty('nombre'));
-    assert.strictEqual(res.body.nombre, 'Proveedor A');
+    assert.strictEqual(res.body.nombre, 'Proveedor XYZ');
   });
 
   it('POST /api/proveedores debe crear un nuevo proveedor', async () => {
     const newProveedor = {
-      nombre: 'Proveedor B',
-      direccion: 'Calle 2, Ciudad',
-      rfc: 'RFC54321B',
-      telefono: '6666666666'
+      nombre: 'Proveedor DEF',
+      direccion: 'Calle Tercera 789',
+      rfc: 'RFC112233445C',
+      telefono: '5551234563',
     };
     const res = await request(app).post('/api/proveedores').send(newProveedor);
     assert.strictEqual(res.status, 201);
-    assert.ok(res.body.hasOwnProperty('nombre'));
-    assert.strictEqual(res.body.nombre, 'Proveedor B');
-
-    // Verificar que se agregó correctamente
-    const allProveedores = await request(app).get('/api/proveedores');
-    assert.strictEqual(allProveedores.body.length, 2);
+    assert.strictEqual(res.body.nombre, 'Proveedor DEF');
   });
 
-  it('PUT /api/proveedores/:id debe actualizar un proveedor', async () => {
+  it('POST /api/proveedores debe fallar con datos inválidos', async () => {
+    const invalidProveedor = {
+      nombre: '',
+      direccion: 'Dirección sin nombre',
+      rfc: '123', // RFC inválido
+      telefono: '123456', // Teléfono inválido
+    };
+    const res = await request(app).post('/api/proveedores').send(invalidProveedor);
+    assert.strictEqual(res.status, 400);
+  });
+
+  it('PUT /api/proveedores/:id debe actualizar un proveedor existente', async () => {
     const updatedProveedor = {
-      nombre: 'Proveedor Actualizado',
-      direccion: 'Calle 3, Ciudad',
-      rfc: 'RFC56789C',
-      telefono: '7777777777'
+      nombre: 'Proveedor XYZ Modificado',
+      direccion: 'Nueva dirección',
+      rfc: 'RFC0987654321',
+      telefono: '5559876543',
     };
     const res = await request(app).put('/api/proveedores/1').send(updatedProveedor);
     assert.strictEqual(res.status, 200);
-    assert.ok(res.body.hasOwnProperty('nombre'));
-    assert.strictEqual(res.body.nombre, 'Proveedor Actualizado');
+    assert.strictEqual(res.body.nombre, 'Proveedor XYZ Modificado');
   });
 
-  it('DELETE /api/proveedores/:id debe eliminar un proveedor', async () => {
+  it('DELETE /api/proveedores/:id debe eliminar un proveedor existente', async () => {
     const res = await request(app).delete('/api/proveedores/1');
     assert.strictEqual(res.status, 204);
 
-    // Verificar que el proveedor fue eliminado
-    const allProveedores = await request(app).get('/api/proveedores');
-    assert.strictEqual(allProveedores.body.length, 1);
-  });
-
-  it('GET /api/proveedores/:id debe retornar 404 para un proveedor inexistente', async () => {
-    const res = await request(app).get('/api/proveedores/9999');
-    assert.strictEqual(res.status, 404);
+    // Verificar que fue eliminado
+    const getRes = await request(app).get('/api/proveedores/1');
+    assert.strictEqual(getRes.status, 404);
   });
 });

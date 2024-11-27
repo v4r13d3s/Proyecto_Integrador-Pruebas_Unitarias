@@ -14,7 +14,7 @@ class Ventas {
   static async create(data) {
     const result = await db.query(
       'INSERT INTO Ventas (monto, idempleado, fechaVenta) VALUES ($1, $2, NOW()) RETURNING *',
-      [data.monto, data.idempleado] 
+      [data.monto, data.idempleado]
     );
     return result.rows[0];
   }
@@ -34,5 +34,3 @@ class Ventas {
 }
 
 module.exports = Ventas;
-
-

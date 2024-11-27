@@ -21,8 +21,8 @@ class Pedidos {
 
   static async update(id, data) {
     const result = await db.query(
-      'UPDATE Pedidos SET total = $1, estado = $2, fechaPedido = $3, idMetodoV = $4, idProveedor = $5 WHERE idPedido = $6 RETURNING *',
-      [data.total, data.estado, data.fechaPedido || 'NOW()', data.idMetodoV, data.idProveedor, id]
+      'UPDATE Pedidos SET total = $1, estado = $2, fechaPedido = NOW(), idMetodoV = $3, idProveedor = $4 WHERE idPedido = $5 RETURNING *',
+      [data.total, data.estado, data.idMetodoV, data.idProveedor, id]
     );
     return result.rows[0];
   }
@@ -34,5 +34,3 @@ class Pedidos {
 }
 
 module.exports = Pedidos;
-
-

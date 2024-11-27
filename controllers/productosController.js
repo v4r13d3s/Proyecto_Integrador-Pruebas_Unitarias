@@ -21,13 +21,44 @@ class ProductosController {
   }
 
   static async create(req, res) {
+    const { nombre, descripcion, precio, stock, idcategoria } = req.body;
+  
+    // Validar datos obligatorios
+    if (!nombre || !descripcion || !precio || !stock || !idcategoria) {
+      return res.status(400).json({
+        message: 'Todos los campos (nombre, descripcion, precio, stock, idcategoria) son obligatorios.',
+      });
+    }
+  
+    // Validar que los datos sean del tipo correcto
+    if (typeof precio !== 'number' || precio <= 0) {
+      return res.status(400).json({
+        message: 'El precio debe ser un número mayor a 0.',
+      });
+    }
+    if (typeof stock !== 'number' || stock < 0) {
+      return res.status(400).json({
+        message: 'El stock debe ser un número mayor o igual a 0.',
+      });
+    }
+  
     try {
       const newProducto = await Productos.create(req.body);
       res.status(201).json(newProducto);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating product', error: error.message });
+      // Validar si el error es por clave foránea
+      if (error.message.includes('foreign key constraint')) {
+        return res.status(400).json({
+          message: 'El idcategoria proporcionado no es válido.',
+        });
+      }
+      res.status(500).json({
+        message: 'Error creando el producto.',
+        error: error.message,
+      });
     }
   }
+  
 
   static async update(req, res) {
     try {

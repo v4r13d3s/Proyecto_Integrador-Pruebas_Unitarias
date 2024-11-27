@@ -1,54 +1,87 @@
 const Roles = require('../models/rolesModel');
 
 class RolesController {
+  // Método para obtener todos los roles
   static async getAll(req, res) {
     try {
       const roles = await Roles.findAll();
       res.status(200).json(roles);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving roles', error: error.message });
+      console.error('Error al obtener los roles:', error.message);
+      res.status(500).json({ message: 'Error al obtener los roles.', error: error.message });
     }
   }
 
+  // Método para obtener un rol por ID
   static async getById(req, res) {
     try {
-      const rol = await Roles.findById(req.params.id);
-      if (!rol) return res.status(404).json({ message: 'Role not found' });
+      const { id } = req.params;
+      const rol = await Roles.findById(id);
+      if (!rol) {
+        return res.status(404).json({ message: `Rol con ID ${id} no encontrado.` });
+      }
       res.status(200).json(rol);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving role', error: error.message });
+      console.error('Error al obtener el rol:', error.message);
+      res.status(500).json({ message: 'Error al obtener el rol.', error: error.message });
     }
   }
 
+  // Método para crear un nuevo rol
   static async create(req, res) {
     try {
-      const newRol = await Roles.create(req.body);
-      res.status(201).json(newRol);
+      const { tipo } = req.body;
+
+      // Validación de que el campo 'tipo' está presente
+      if (!tipo) {
+        return res.status(400).json({ message: 'El campo "tipo" es obligatorio.' });
+      }
+
+      const nuevoRol = await Roles.create({ tipo });
+      res.status(201).json(nuevoRol);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating role', error: error.message });
+      console.error('Error al crear el rol:', error.message);
+      res.status(500).json({ message: 'Error al crear el rol.', error: error.message });
     }
   }
 
+  // Método para actualizar un rol
   static async update(req, res) {
     try {
-      const updatedRol = await Roles.update(req.params.id, req.body);
-      if (!updatedRol) return res.status(404).json({ message: 'Role not found' });
-      res.status(200).json(updatedRol);
+      const { id } = req.params;
+      const { tipo } = req.body;
+
+      if (!tipo) {
+        return res.status(400).json({ message: 'El campo "tipo" es obligatorio.' });
+      }
+
+      const rolActualizado = await Roles.update(id, { tipo });
+      if (!rolActualizado) {
+        return res.status(404).json({ message: `Rol con ID ${id} no encontrado.` });
+      }
+
+      res.status(200).json(rolActualizado);
     } catch (error) {
-      res.status(500).json({ message: 'Error updating role', error: error.message });
+      console.error('Error al actualizar el rol:', error.message);
+      res.status(500).json({ message: 'Error al actualizar el rol.', error: error.message });
     }
   }
 
+  // Método para eliminar un rol
   static async delete(req, res) {
     try {
-      const deletedRol = await Roles.delete(req.params.id);
-      if (!deletedRol) return res.status(404).json({ message: 'Role not found' });
-      res.status(204).json(); // No content for successful deletion
+      const { id } = req.params;
+      const rolEliminado = await Roles.delete(id);
+      if (!rolEliminado) {
+        return res.status(404).json({ message: `Rol con ID ${id} no encontrado.` });
+      }
+
+      res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: 'Error deleting role', error: error.message });
+      console.error('Error al eliminar el rol:', error.message);
+      res.status(500).json({ message: 'Error al eliminar el rol.', error: error.message });
     }
   }
 }
 
 module.exports = RolesController;
-

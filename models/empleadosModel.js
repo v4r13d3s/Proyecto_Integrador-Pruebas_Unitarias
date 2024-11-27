@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const db = require('../config/database'); // Importar correctamente la configuración de la base de datos
 
 class Empleados {
   static async findAll() {
@@ -12,6 +12,11 @@ class Empleados {
   }
 
   static async create(data) {
+    const userExists = await db.query('SELECT 1 FROM usuarios WHERE idUsuario = $1', [data.idusuario]);
+    if (userExists.rowCount === 0) {
+      throw new Error(`El usuario con idUsuario ${data.idusuario} no existe.`);
+    }
+
     const result = await db.query(
       'INSERT INTO empleados (nombre, appaterno, apmaterno, fechanacimiento, curp, idusuario) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [data.nombre, data.appaterno, data.apmaterno, data.fechanacimiento, data.curp, data.idusuario]
@@ -20,6 +25,11 @@ class Empleados {
   }
 
   static async update(id, data) {
+    const userExists = await db.query('SELECT 1 FROM usuarios WHERE idUsuario = $1', [data.idusuario]);
+    if (userExists.rowCount === 0) {
+      throw new Error(`El usuario con idUsuario ${data.idusuario} no existe.`);
+    }
+
     const result = await db.query(
       'UPDATE empleados SET nombre = $1, appaterno = $2, apmaterno = $3, fechanacimiento = $4, curp = $5, idusuario = $6 WHERE idEmpleado = $7 RETURNING *',
       [data.nombre, data.appaterno, data.apmaterno, data.fechanacimiento, data.curp, data.idusuario, id]
@@ -34,4 +44,3 @@ class Empleados {
 }
 
 module.exports = Empleados;
-
